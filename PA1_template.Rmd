@@ -1,25 +1,102 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template.Rmd"
+output: html_document
 ---
 
+For this assignment, first we will need to upload the data and save it to a variable called "data".
 
-## Loading and preprocessing the data
+```{r loading data}
+data <- read.csv("activity.csv")
+```
+
+The document does not have the correct formats, as we would like, so we will transform them.
+
+```{r transform}
+library(lubridate)
+data$date <- as.character(data$date)
+data$date <- as.Date(data$date)
+```
+
+Lastly, we will answer the questions required.
+
+##1. What is the total number of steps taken per day?
+For this question, we will do several steps. First, we will transform tha steps variable from factor to number. Then we calculate the number of steps per day, and then we make a mean of the steps per day. Lastly, we make a histogram to show the number of steps per day. 
+```{r}
+data$steps <- as.integer(data$steps)
+stepsperday <- tapply(data$steps, data$date, sum, na.rm = TRUE)
+```  
+###Histogram of steps per day
+```{r}
+hist(stepsperday, main = "Steps per day", xlab = "day")
+```
+###Mean and median steps per day
+```{r}
+meansteps <- sapply(stepsperday, mean)
+mediansteps <- sapply(stepsperday, median)
+```
+###Reporting results
+```{r}
+barplot(meansteps, main = "Average steps per day")
+barplot(mediansteps, main = "Median steps per day")
+```
+
+##2. What is the daily activity pattern?
+###Time series plot of the average numbers of steps taken 
+```{r}
+library(dplyr)
+int <- data %>% filter(!is.na(steps)) %>% 
+      group_by(interval) %>% 
+      summarize(steps = mean(steps))
+plot(int, data$steps, type = "l")
+```
+###Determining the five minute interval, that, on average, contains the max number of steps taken
+```{r}
+int[which.max(int$steps),]
+```
+
+##3. Imputing missing values
+###Determining the total number of NAs in the dataset
+```{r}
+sum(is.na(data))
+```
+###Creating a NA filling strategy
+We will use the mean as a filling strategy of each day.
+```{r}
+l <- nrow(data)
+for (i in 1:l) {
+    if (is.na(data$steps[i])) {
+          data$steps[i] <- tapply(data$steps, data$date, mean)
+    }
+}
+sum(is.na(data))
+```
+###Comparing results with the first part
+```{r comparison}
+hist(stepsperday)
+barplot(meansteps, main = "Average steps per day")
+barplot(mediansteps, main = "Median steps per day")
+```
+
+##4. Are there differences in activity patterns between weekdays and weekends?
+###Create a new factor variable
+```{r weekdays}
+weekday <- ifelse(weekdays(data$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
+weekday <- as.factor(weekday)
+data <- cbind(data, weekday)
+str(data)
+```
+
+###Make a panel plot
+```{r panelplot}
+par(2,1)
+plot(meansteps, weekday = 1, type = "l",main = "Weekend")
+plot(meansteps, weekday = 0, type = "l",main = "Weekday")
+```
 
 
 
-## What is mean total number of steps taken per day?
 
 
 
-## What is the average daily activity pattern?
 
 
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
